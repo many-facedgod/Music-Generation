@@ -9,7 +9,6 @@ from torch.utils.data import Dataset, DataLoader
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-
 def create_midi(prediction_output):
     """ convert the output from the prediction to notes and create a midi file
         from the notes """
@@ -75,7 +74,6 @@ def collate(seq_list):
     targets = torch.cat([s[1].unsqueeze(1) for s in seq_list],dim=1)
     return inputs,targets
 
-
 class MusicModel(nn.Module):
     def __init__(self,vocab_size,embed_size=400,hidden_size=1250,nlayers=2):
         super(MusicModel,self).__init__()
@@ -103,8 +101,7 @@ class MusicModel(nn.Module):
         else:
             return out,hidden
 
-
-def  train_batch(inputs,labels):
+def train_batch(inputs,labels):
     inputs=inputs.to(device).long()
     labels=labels.to(device).long()
     output = model(inputs)
