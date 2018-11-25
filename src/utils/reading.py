@@ -9,6 +9,7 @@
 import glob
 import pickle
 from music21 import chord, converter, instrument, midi, note
+import numpy as np
 
 
 ################# Just Pitch #################

@@ -53,26 +53,26 @@ def create_midi(prediction_output, output_file):
     midi_stream.write('midi', fp=output_file)
 
 def generate_notes(output_len, seed):
-	#model.test()
+    #model.test()
     device = "cuda" if torch.cuda.is_available() else "cpu"
-	seed = torch.from_numpy(inputs).unsqueeze(1)  # L x 1
-	seed = seed.to(device).long()
-	with torch.no_grad():
-	    generated_notes = []
-	    output, hidden = model.forward(seed, None, True)
-	    out = output[-1]
-	    _, curr_note = torch.max(out, dim=1)  # 1
-	    generated_notes.append(curr_note)
+    seed = torch.from_numpy(inputs).unsqueeze(1)  # L x 1
+    seed = seed.to(device).long()
+    with torch.no_grad():
+        generated_notes = []
+        output, hidden = model.forward(seed, None, True)
+        out = output[-1]
+        _, curr_note = torch.max(out, dim=1)  # 1
+        generated_notes.append(curr_note)
 
-	    i = 1
-	    while(i < out_length):
-	        curr_note = curr_note.unsqueeze(0)  # L=1 x N=1
-	        output, hidden = model.forward(curr_note, hidden, True)
-	        out = output[-1]
-	        _, curr_note = torch.max(out, dim=1)
-	        generated_notes.append(curr_note)
-	        i += 1
-	    g = torch.cat(generated_notes, dim=0)
-	    #g = torch.transpose(g,0,1)
-	    g = g.tolist()
-	    return g
+        i = 1
+        while(i < out_length):
+            curr_note = curr_note.unsqueeze(0)  # L=1 x N=1
+            output, hidden = model.forward(curr_note, hidden, True)
+            out = output[-1]
+            _, curr_note = torch.max(out, dim=1)
+            generated_notes.append(curr_note)
+            i += 1
+        g = torch.cat(generated_notes, dim=0)
+        #g = torch.transpose(g,0,1)
+        g = g.tolist()
+        return g

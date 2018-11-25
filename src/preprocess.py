@@ -4,6 +4,9 @@ from music21 import converter, instrument, note, chord, midi
 import glob
 import pickle
 
+FILE_REGEXP = "../bach/aof/can*.mid"
+SEQ_LEN = 50
+
 def get_notes():
     notes=[]
     chords=[]
@@ -80,7 +83,12 @@ def testing():
     #             output.append('.'.join (str(elt) for elt in n.normalOrder))
     # print(output)
 
+
+################################
+
 # MIGHT NEED TO TRANSPOSE BASED ON KEY SIGNATURE, FOR BETTER-QUALITY OUTPUT
+# input: filename
+# output: list of (pitch, duration) tuples
 def read_file(filename):
     processed = []
     score = midi.translate.midiFilePathToStream(filename, quarterLengthDivisors=(32,))
@@ -89,20 +97,46 @@ def read_file(filename):
             pitch = 0 if isinstance(elt, note.Rest) else elt.pitch.midi
             duration = elt.quarterLength
             processed.append((pitch, duration))
-    return set(processed)
+    return processed
 
-def get_unique_items(filepaths):
+# Returns all unique (pitch, duration) pairs in the FILE_REGEXP set of files
+def get_unique_items():
     global_set = set([])
-    for filename in glob.glob(filepaths):
-        global_set = global_set.union(read_file(filename))
+    for filename in glob.glob(FILE_REGEXP):
+        global_set = global_set.union(set(read_file(filename)))
     return sorted(global_set)
 
+# Returns 2 dictionaries:
+# 1. (pitch, duration) pairs --> indices
+# 2. indices --> (pitch, duration) pairs
 def build_dictionary():
-    global_set = get_unique_items("../bach/aof/can*.mid")  # defined by pitch and duration, for now
+    global_set = get_unique_items()  # defined by pitch and duration, for now
     item_to_index = {item: i for i, item in enumerate(global_set)}
     index_to_item = {i: item for i, item in enumerate(global_set)}
-    print(item_to_index)
-    print(index_to_item)
+    return item_to_index, index_to_item
 
-build_dictionary()
-encode_files()
+# Uses the built dictionaries to encode all files in the FILE_REGEXP set of files as int-encoded vectors
+# Note: nn.Embedding handles int-encoded vectors (doesn't need 1-hot vectors)
+def encode_files(item_to_index):
+    files = glob.glob(FILE_REGEXP)
+    num_files = len(files)
+    vocab_size = len(item_to_index)
+    print(num_files)
+    processed_files = []
+    for file in files:
+        processed_files.append(read_file(file))
+    int_encoded_files = []
+    for file in processed_files:
+        int_encoded_files.append([item_to_index[item] for item in file])
+    return int_encoded_files
+
+def concat_files(files_list):
+    base = []
+    for file in files_list:
+        base.extend(file)
+    return base
+
+item_to_index, index_to_item = build_dictionary()
+encoded_files = encode_files(item_to_index)  # list of int lists
+data = concat_files(encoded_files)
+print(len(data))

@@ -4,6 +4,9 @@
 # Example Usage:
 # <add here>
 ###############################################################################################
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset
 
 # NOTE:
 # Consider avoiding song boundaries... noteslist is a concatenation of ALL songs, thus ignoring boundaries -
@@ -46,14 +49,14 @@ class MusicModel(nn.Module):
         out_LSTM=out_LSTM.view(-1,self.hidden_size)  #(L*N)x H
         out = self.fc_embed(out_LSTM)  # (L*N) x E
         out = torch.mm(out,torch.transpose(self.embedding.weight,0,1))  #(L*N)*V
-        out = out.view(-1,batch_size,vocab_size)  # Lx N X V
+        out = out.view(-1,batch_size,self.vocab_size)  # Lx N X V
 
         if gen==False:
             return out
         else:
             return out,hidden
 
-def train_batch(inputs, labels):
+def train_batch(model, optimizer, criterion, inputs, labels, device="cpu"):
     inputs = inputs.to(device).long()
     labels = labels.to(device).long()
     output = model(inputs)
@@ -64,16 +67,15 @@ def train_batch(inputs, labels):
     optimizer.step()
     return loss.item()
 
-def train(model, train_dataloader):
-	device = "cuda" if torch.cuda.is_available() else "cpu"
+def train(model, optimizer, criterion, train_dataloader, num_epochs=100, device="cpu"):
 	model.train().to(device)
 	for epoch in range(num_epochs):
 	    total_epoch_loss = 0
 	    for batch_no, (x,labels) in enumerate(train_dataloader):
-	        loss = train_batch(x, labels)
+	        loss = train_batch(model, optimizer, criterion, x, labels, device)
 	        total_epoch_loss += loss
 	        print('Epoch:{}/{} batch_no:{}  Batch Loss:{:.4f}'.format(epoch+1, num_epochs, batch_no, loss))
 	    epoch_loss = total_epoch_loss / (batch_no+1)
 	    torch.save(model.state_dict(), "models/checkpoint.pt")
-	    print('------------------------')
-	    print('Epoch:{}/{} Epoch_Loss: {:.4f}'.format(epoch+1, num_epochs, epoch_loss))
+	    print('\nEpoch:{}/{} Epoch_Loss: {:.4f}'.format(epoch+1, num_epochs, epoch_loss))
+        print('------------------------')
