@@ -37,22 +37,24 @@ def training_phase():
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=WEIGHT_DECAY)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate)
 
+    print("CUDA IS AVAILABLE: ", "YES" if torch.cuda.is_available() else "NO")
+
     # Train model
     train(model, optimizer, criterion, train_dataloader, num_epochs=NUM_EPOCHS, device="cuda" if torch.cuda.is_available() else "cpu")
 
     # Save model
     torch.save(model.state_dict(), "models/baseline_model.pt")
 
-    return vocab_size, data, model
+    return vocab_size, data, int_to_note, model
 
-def generation_phase(vocab_size):
+def generation_phase(vocab_size, data, int_to_note, model):
     # Load model
     model = MusicModel(vocab_size)
     model.load_state_dict(torch.load("models/baseline_model.pt"))
 
     # Generate music! 
-    generate_music(model, OUTPUT_FILE)
+    generate_music(data, int_to_note, model, OUTPUT_LEN, SEED_LEN, OUTPUT_FILE)
 
 if __name__ == "__main__":
-    vocab_size, data, model = training_phase()
-    generation_phase(data, model, OUTPUT_LEN, SEED_LEN)
+    vocab_size, data, int_to_note, model = training_phase()
+    generation_phase(vocab_size, data, int_to_note, model)

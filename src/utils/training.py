@@ -68,14 +68,14 @@ def train_batch(model, optimizer, criterion, inputs, labels, device="cpu"):
     return loss.item()
 
 def train(model, optimizer, criterion, train_dataloader, num_epochs=100, device="cpu"):
-	model.train().to(device)
-	for epoch in range(num_epochs):
-	    total_epoch_loss = 0
-	    for batch_no, (x,labels) in enumerate(train_dataloader):
-	        loss = train_batch(model, optimizer, criterion, x, labels, device)
-	        total_epoch_loss += loss
-	        print('Epoch:{}/{} batch_no:{}  Batch Loss:{:.4f}'.format(epoch+1, num_epochs, batch_no, loss))
-	    epoch_loss = total_epoch_loss / (batch_no+1)
-	    torch.save(model.state_dict(), "models/checkpoint.pt")
-	    print('\nEpoch:{}/{} Epoch_Loss: {:.4f}'.format(epoch+1, num_epochs, epoch_loss))
+    model.train().to(device)
+    for epoch in range(num_epochs):
+        total_epoch_loss = 0
+        for batch_no, (x,labels) in enumerate(train_dataloader):
+            loss = train_batch(model, optimizer, criterion, x, labels, device)
+            total_epoch_loss += loss
+            print('Epoch:{}/{} batch_no:{}  Batch Loss:{:.4f}'.format(epoch+1, num_epochs, batch_no, loss))
+        epoch_loss = total_epoch_loss / (batch_no+1)
+        torch.save(model.state_dict(), "models/checkpoint.pt")
+        print('\nEpoch:{}/{} Epoch_Loss: {:.4f}'.format(epoch+1, num_epochs, epoch_loss))
         print('------------------------')

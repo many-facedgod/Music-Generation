@@ -9,13 +9,15 @@
 # - adjust the temperature
 # - possibly threshold to top k choices
 ###############################################################################################
+from music21 import chord, instrument, note, stream
 import numpy as np
+import torch
 
-def generate_music(data, model, output_len, seed_len, output_file):
+def generate_music(data, int_to_note, model, output_len, seed_len, output_file):
     idx = np.random.randint(len(data) - seed_len)  # selects a random index in the dataset
     seed = np.array(data[idx:idx+10])
     print("seed.shape: ", seed.shape)
-    gen_index = generate_notes(output_len,seed)
+    gen_index = generate_notes(model, output_len, seed)
     gen_notes = [int_to_note[i] for i in gen_index]
     print(gen_notes)
     create_midi(gen_notes, output_file)
@@ -52,20 +54,23 @@ def create_midi(prediction_output, output_file):
     midi_stream = stream.Stream(output_notes)
     midi_stream.write('midi', fp=output_file)
 
-def generate_notes(output_len, seed):
+def generate_notes(model, output_len, seed):
     #model.test()
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    seed = torch.from_numpy(inputs).unsqueeze(1)  # L x 1
+    model.to(device)
+    seed = torch.from_numpy(seed).unsqueeze(1)  # L x 1
     seed = seed.to(device).long()
     with torch.no_grad():
         generated_notes = []
         output, hidden = model.forward(seed, None, True)
         out = output[-1]
         _, curr_note = torch.max(out, dim=1)  # 1
+        print("seed: ", type(seed), seed)
+        print("curr_note: ", type(curr_note), curr_note)
         generated_notes.append(curr_note)
 
         i = 1
-        while(i < out_length):
+        while(i < output_len):
             curr_note = curr_note.unsqueeze(0)  # L=1 x N=1
             output, hidden = model.forward(curr_note, hidden, True)
             out = output[-1]
