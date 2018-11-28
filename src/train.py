@@ -1,5 +1,5 @@
 #####################################################################
-# Do not run on CPU. PyTorch has a bug where the ignore_index     #
+# Do not run on CPU. PyTorch has a bug where the ignore_index       #
 # parameter doesn't work with CPU if the ignored index is not       #
 # smaller than the size of the vocabulary.                          #
 #####################################################################
@@ -267,6 +267,19 @@ def load_state(run_id, tags, model=None, optimizer=None, strict=False):
 
 
 def validate(model, val_dataset, criterion=CELoss(), make_batch_fn=make_batch, val_batch_fn=validate_batch_perplexity):
+    """Validate the model
+    
+    Args:
+        model (nn.Module): The model to be validated
+        val_dataset (MusicDatasetNoConcat): The validation dataset
+        criterion (nn.Module, optional): Defaults to CELoss(). The criterion to be used
+        make_batch_fn (function, optional): Defaults to make_batch. The function to make a batch from the dataset yield
+        val_batch_fn (function, optional): Defaults to validate_batch_perplexity. The function for validating a batch
+    
+    Returns:
+        float: Mean validation score across batches
+    """
+
     log("Validating model...")
     scores = []
     bar = tqdm(val_dataset, desc="Current validation score: NaN", file=sys.stdout)
@@ -282,6 +295,23 @@ def validate(model, val_dataset, criterion=CELoss(), make_batch_fn=make_batch, v
 def train(model, train_dataset, val_dataset, criterion, optimizer, iters, train_batch_fn=train_batch,
           val_batch_fn=validate_batch_perplexity, make_batch_fn=make_batch, save_every=20, validate_every=1,
           name="checkpoint"):
+    """Trains the model
+          
+    Args:
+        model (nn.Module): The model to be trained
+        train_dataset (MusicDatasetNoConcat): The dataset for training
+        val_dataset (MusicDatasetNoConcat): The dataset for validation
+        criterion (nn.Module): The loss function
+        optimizer (optim.Optimizer): The optimizer to be used
+        iters (int): The number of iterations
+        train_batch_fn (function, optional): Defaults to train_batch. Function for training a batch
+        val_batch_fn (function, optional): Defaults to validate_batch_perplexity. Function for validating a batch
+        make_batch_fn (function, optional): Defaults to make_batch. Function to make a batch from the dataset
+        save_every (int, optional): Defaults to 20. Saves the model every save_every iters
+        validate_every (int, optional): Defaults to 1. Validates the model every validate_every iters
+        name (str, optional): Defaults to "checkpoint". Name for the saved checkpoints
+    """
+
     for i in range(1, iters + 1):
         losses = []
         log("Iteration {}/{}:".format(i, iters))
