@@ -1,5 +1,5 @@
 #####################################################################
-# Do not run on CPU  . PyTorch has a bug where the ignore_index     #
+# Do not run on CPU. PyTorch has a bug where the ignore_index     #
 # parameter doesn't work with CPU if the ignored index is not       #
 # smaller than the size of the vocabulary.                          #
 #####################################################################
