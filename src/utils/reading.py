@@ -66,6 +66,67 @@ def read_file_as_pitch_duration(filename):
     return processed
 
 
+################# Pitch + Duration + Offset #################
+
+# Returns <filename> as a list of (pitch, relative offset, duration) tuples
+# Note: Consider transposing based on key signature?
+def read_file_as_pitch_offset_duration(filename):
+    score = midi.translate.midiFilePathToStream(filename, quarterLengthDivisors=(32,))
+    events = score.flat
+    processed = []
+    print("processing ", filename, "...")
+    for i in range(len(events)):  # flat converts relative offsets into absolute offsets!
+        elt = events[i]
+        # TODO: add handling for Chords (not super common in the input files)
+        # if isinstance(elt, chord.Chord):
+        #     print(elt)
+        if isinstance(elt, note.Rest) or isinstance(elt, note.Note):  # for now, ignoring chord.Chord, meter.TimeSignature, tempo.MetronomeMark
+            pitch = 0 if isinstance(elt, note.Rest) else elt.pitch.midi
+            offset = elt.offset
+            duration = elt.quarterLength
+            processed.append((pitch, offset, duration))
+    processed.sort(key = lambda x: (x[1], x[0]))
+    prev_abs_offset = 0
+    for i in range(len(processed)):
+        curr_abs_offset = processed[i][1]
+        processed[i] = (processed[i][0], curr_abs_offset - prev_abs_offset, processed[i][2])
+        prev_abs_offset = curr_abs_offset
+    return processed
+
+# Takes in a filename, builds all of the dictionaries we want for encoding and decoding, and encodes the files. Later, possibly split into functions for reuse.
+def process(file_regexp):
+    # Read in all files matching file_regexp.
+    files_list = glob.glob(file_regexp)
+    processed_files = []
+    for filename in files_list:
+        processed_files.append(read_file_as_pitch_offset_duration(filename))
+
+    # Build dictionaries (val_to_index, index_to_val) using global_list
+    triples = np.array(concat_files(processed_files))
+    pitches, offsets, durations = triples[:,0], triples[:,1], triples[:,2]
+    (pitch_to_index, index_to_pitch), (offset_to_index, index_to_offset), (duration_to_index, index_to_duration) = build_dictionaries(pitches), build_dictionaries(offsets), build_dictionaries(durations)
+
+    # Encode the files
+    encoded_files = np.empty(len(files_list), dtype=object)
+    print("encoded_files shape = ", encoded_files.shape)
+    for i in range(len(processed_files)):
+        file = np.array(processed_files[i])
+        encoded_file = np.zeros((len(file),3))
+        encoded_file[:,0] = np.array([pitch_to_index[pitch] for pitch in file[:,0]])
+        encoded_file[:,1] = np.array([offset_to_index[offset] for offset in file[:,1]])
+        encoded_file[:,2] = np.array([duration_to_index[duration] for duration in file[:,2]])
+        encoded_files[i] = encoded_file
+
+    return encoded_files, index_to_pitch, index_to_offset, index_to_duration
+
+# Takes in a rank-1 numpy array of values and returns 2 dictionaries - one mapping values to indices ("codes"), and one mapping indices back to values
+def build_dictionaries(arr):
+    unique_vals = np.unique(arr)
+    val_to_index = {item: i for i, item in enumerate(unique_vals)}
+    index_to_val = {i: item for i, item in enumerate(unique_vals)}
+    return val_to_index, index_to_val
+
+
 ################# Can be made general later #################
 
 # Returns all unique (pitch, duration) pairs in the files matching file_regexp
