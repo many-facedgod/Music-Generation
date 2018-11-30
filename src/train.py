@@ -29,8 +29,25 @@ if torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
-data_file = "music.npy"
-vocab_sizes = [56, 44, 208]  # not including eos
+def load_dictionaries():
+    """Loads the dictionaries and returns them along with the vocab_sizes
+
+    Returns:
+        list of int: the vocab sizes of pitch, offset, duration in that order
+        dictionary: index_to_pitch
+        dictionary: index_to_offset
+        dictionary: index_to_duration
+    """
+    dictionaries = np.load(join(data_path,music_file+'_dicts.npy'))
+    index_to_pitch = dictionaries[0]
+    index_to_offset = dictionaries[1]
+    index_to_duration = dictionaries[2]
+    vocab_sizes = [len(index_to_pitch),len(index_to_offset),len(index_to_duration)]
+    return vocab_sizes, index_to_pitch, index_to_offset, index_to_duration	
+
+music_file = "music_lmd"
+#TODO: For use in Decoder
+vocab_sizes,_,_,_ = load_dictionaries()  # not including eos
 eos_indices = vocab_sizes.copy()  # EOS and SOS have the same index
 ignored_index = 999  # for the cross-entropy loss
 
@@ -213,12 +230,27 @@ def load_dataset(train_batch_size=3, eval_batch_size=3, train_ratio=0.8):
         tuple of MusicDatasetNoConcat: The train and validation datasets
     """
 
-    data = np.load(join(data_path, data_file))
+    data = np.load(join(data_path, music_file+'_data.npy'))
     train_size = int(len(data) * train_ratio)
     train_data = data[:train_size]
     val_data = data[train_size:]
     return MusicDatasetNoConcat(train_data, train_batch_size), MusicDatasetNoConcat(val_data, eval_batch_size)
 
+
+def load_dictionaries():
+    """Loads the dictionaries
+
+    Returns:
+        list of int: the vocab sizes of pitch, offset, duration in that order
+        int_to
+    """
+
+    dictionaries = np.load(data_path+music_file+'_dicts.npy')
+    index_to_pitch = dictionaries[0]
+    index_to_offset = dictionaries[1]
+    index_to_duration = dictionaries[2]
+    vocab_sizes = [len(index_to_pitch),len(index_to_offset),len(index_to_duration)]
+    return vocab_sizes, index_to_pitch, index_to_offset, index_to_duration	
 
 def save_state(tags, model=None, optimizer=None):
     """Saves the model and the optimizer state
