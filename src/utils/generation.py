@@ -9,9 +9,46 @@
 # - adjust the temperature
 # - possibly threshold to top k choices
 ###############################################################################################
+from collections import defaultdict
 from music21 import chord, instrument, note, stream
 import numpy as np
 import torch
+
+# Takes in a numpy array of shape (n, 3), where each row is [pitch, offset, duration] of
+# an event.
+# Writes to a .mid file.
+def output_pitch_offset_duration_as_midi_file(arr, output_file):
+    input_len = arr.shape[0]
+    pitch, offset, duration = arr[:,0], arr[:,1], arr[:,2]
+    pitch = pitch.astype(np.int32).tolist()  # must convert to native int type (see final case in Chord's _add_core_or_init)
+    print(pitch[:10], offset[:10], duration[:10])
+
+    # key idea: for every offset, maintain a dict that maps: duration --> list of pitches
+    # each element of the map is a chord (or note, if only 1)
+    i = 0
+    total_offset = 0  # TODO: need to update this!!!!
+    output_notes = []
+    while i < input_len:
+        total_offset += offset[i]
+        dd = defaultdict(list)
+        if pitch[i] != 0:
+            dd[duration[i]].append(pitch[i])
+        while i+1 < input_len and offset[i+1] == 0:  # increment i and add next values to the map
+            i += 1
+            if pitch[i] != 0:
+                dd[duration[i]].append(pitch[i])
+        for d, pitches in dd.items():
+            print("(d, pitches) = ", d, ", ", pitches)
+            # might be able to express notes as single-element chords...
+            item = note.Note(pitches[0]) if len(pitches) == 1 else chord.Chord(pitches)
+            item.offset = total_offset
+            item.duration.quarterLength = d
+            output_notes.append(item)
+        i += 1
+
+    midi_stream = stream.Stream(output_notes)
+    midi_stream.write('midi', fp=output_file)
+
 
 def generate_music(data, int_to_note, model, output_len, seed_len, output_file):
     idx = np.random.randint(len(data) - seed_len)  # selects a random index in the dataset
@@ -21,6 +58,7 @@ def generate_music(data, int_to_note, model, output_len, seed_len, output_file):
     gen_notes = [int_to_note[i] for i in gen_index]
     print(gen_notes)
     create_midi(gen_notes, output_file)
+
 
 def create_midi(prediction_output, output_file):
     """ convert the output from the prediction to notes and create a midi file
