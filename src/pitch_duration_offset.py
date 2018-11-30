@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 def save_new_data(encode_files, index_to_pitch, index_to_offset, index_to_duration):
-	filename = 'music_lmd'
+	filename = 'music_classical'
 	filepath = '../data/'
 
 	np.save(filepath+filename+'_data.npy',encoded_files)
@@ -12,7 +12,7 @@ def save_new_data(encode_files, index_to_pitch, index_to_offset, index_to_durati
 
 start=time.time()
 
-INPUT_FILE = "../lakh_midi/files_200/*.mid"
+INPUT_FILE = "../bach/aof/*.mid"
 encoded_files, index_to_pitch, index_to_offset, index_to_duration = process(INPUT_FILE)
 print("encoded_files.shape = ", encoded_files.shape)
 for f in encoded_files:

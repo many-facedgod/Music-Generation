@@ -45,7 +45,7 @@ def load_dictionaries():
     vocab_sizes = [len(index_to_pitch),len(index_to_offset),len(index_to_duration)]
     return vocab_sizes, index_to_pitch, index_to_offset, index_to_duration	
 
-music_file = "music_lmd"
+music_file = "music_classical"
 #TODO: For use in Decoder
 vocab_sizes,_,_,_ = load_dictionaries()  # not including eos
 eos_indices = vocab_sizes.copy()  # EOS and SOS have the same index
@@ -218,7 +218,7 @@ def init_run():
     log("--------------------------------------------------------")
 
 
-def load_dataset(train_batch_size=3, eval_batch_size=3, train_ratio=0.8):
+def load_dataset(train_batch_size=8, eval_batch_size=8, train_ratio=0.8):
     """Loads the dataset
 
     Args:
@@ -270,18 +270,17 @@ def load_state(run_id, tags, model=None, optimizer=None, strict=False):
         strict (bool, optional): Defaults to False. Loading type
     """
 
-    name = ".".join([str(i) for i in tags]) + ".pt"
+    name = "".join([str(i) for i in tags]) + ".pt"
     log("Loading model {} from run_id {}...".format(name, run_id))
     run_id = str(run_id)
     path = join(exp_path, run_id, "models", name)
-    state = torch.load(path)
+    state = torch.load(path,map_location=device)
     if model is not None:
         model.load_state_dict(state["model_state"], strict=strict)
     if optimizer is not None:
         optimizer.load_state_dict(state["optim_state"])
     log("Loaded.")
     log("--------------------------------------------------------")
-
 
 def validate(model, val_dataset, criterion=CELoss(), make_batch_fn=make_batch, val_batch_fn=validate_batch_perplexity):
     """Validate the model
@@ -349,6 +348,9 @@ def main():
     init_run()
     model = model1.Baseline(3, vocab_sizes).to(device)
     optimizer = optim.Adam(model.parameters())
+    load_state('1543553172', 'checkpoint.40',model,optimizer)
+    generated_outputs = model.decode()
+    print (generated_outputs)
     train_ds, val_ds = load_dataset()
     train(model, train_ds, val_ds, CELoss(), optimizer, 200)
 
