@@ -270,7 +270,7 @@ def load_state(run_id, tags, model=None, optimizer=None, strict=False):
         strict (bool, optional): Defaults to False. Loading type
     """
 
-    name = "".join([str(i) for i in tags]) + ".pt"
+    name = ".".join([str(i) for i in tags]) + ".pt"
     log("Loading model {} from run_id {}...".format(name, run_id))
     run_id = str(run_id)
     path = join(exp_path, run_id, "models", name)
@@ -348,7 +348,7 @@ def main():
     init_run()
     model = model1.Baseline(3, vocab_sizes).to(device)
     optimizer = optim.Adam(model.parameters())
-    load_state('1543553172', 'checkpoint.40',model,optimizer)
+    load_state('1543553172', ('checkpoint',40),model,optimizer)
     generated_outputs = model.decode()
     print (generated_outputs)
     train_ds, val_ds = load_dataset()
