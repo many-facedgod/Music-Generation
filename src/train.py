@@ -235,22 +235,7 @@ def load_dataset(train_batch_size=3, eval_batch_size=3, train_ratio=0.8):
     train_data = data[:train_size]
     val_data = data[train_size:]
     return MusicDatasetNoConcat(train_data, train_batch_size), MusicDatasetNoConcat(val_data, eval_batch_size)
-
-
-def load_dictionaries():
-    """Loads the dictionaries
-
-    Returns:
-        list of int: the vocab sizes of pitch, offset, duration in that order
-        int_to
-    """
-
-    dictionaries = np.load(data_path+music_file+'_dicts.npy')
-    index_to_pitch = dictionaries[0]
-    index_to_offset = dictionaries[1]
-    index_to_duration = dictionaries[2]
-    vocab_sizes = [len(index_to_pitch),len(index_to_offset),len(index_to_duration)]
-    return vocab_sizes, index_to_pitch, index_to_offset, index_to_duration	
+	
 
 def save_state(tags, model=None, optimizer=None):
     """Saves the model and the optimizer state
