@@ -7,7 +7,7 @@ def save_new_data(encode_files, index_to_pitch, index_to_offset, index_to_durati
 	filepath = '../data/'
 
 	np.save(filepath+filename+'_data.npy',encoded_files)
-	dictionaries = np.array((index_to_pitch,index_to_duration,index_to_offset),dtype=object)
+	dictionaries = np.array((index_to_pitch,index_to_offset,index_to_duration),dtype=object)
 	np.save(filepath+filename+'_dicts.npy',dictionaries)
 
 start=time.time()
