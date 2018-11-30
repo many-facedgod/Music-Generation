@@ -98,16 +98,25 @@ def process(file_regexp):
     # Read in all files matching file_regexp.
     files_list = glob.glob(file_regexp)
     processed_files = []
+    error_files=[] # can use this if you want to purge the data sometime
+    c=0
     for filename in files_list:
-        processed_files.append(read_file_as_pitch_offset_duration(filename))
-
+        c=c+1
+        try:
+            processed = read_file_as_pitch_offset_duration(filename)
+            processed_files.append(processed)
+        except Exception:
+            print('Error in this file:',filename)
+            print('File no: ',c)
+            error_files.append(filename)
+    
     # Build dictionaries (val_to_index, index_to_val) using global_list
     triples = np.array(concat_files(processed_files))
     pitches, offsets, durations = triples[:,0], triples[:,1], triples[:,2]
     (pitch_to_index, index_to_pitch), (offset_to_index, index_to_offset), (duration_to_index, index_to_duration) = build_dictionaries(pitches), build_dictionaries(offsets), build_dictionaries(durations)
 
     # Encode the files
-    encoded_files = np.empty(len(files_list), dtype=object)
+    encoded_files = np.empty(len(processed_files), dtype=object)
     print("encoded_files shape = ", encoded_files.shape)
     for i in range(len(processed_files)):
         file = np.array(processed_files[i])
