@@ -12,7 +12,7 @@ def save_new_data(encode_files, index_to_pitch, index_to_offset, index_to_durati
 
 start=time.time()
 
-INPUT_FILE = "../bach/aof/*.mid"
+INPUT_FILE = "../datasets/bach/aof/*.mid"
 encoded_files, index_to_pitch, index_to_offset, index_to_duration = process(INPUT_FILE)
 print("encoded_files.shape = ", encoded_files.shape)
 for f in encoded_files:
