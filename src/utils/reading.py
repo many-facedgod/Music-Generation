@@ -8,7 +8,7 @@
 ###############################################################################################
 import glob
 import pickle
-from music21 import chord, converter, instrument, midi, note
+from music21 import chord, converter, instrument, midi, note, meter
 import numpy as np
 
 
@@ -67,6 +67,23 @@ def read_file_as_pitch_duration(filename):
 
 
 ################# Pitch + Duration + Offset #################
+def has_piano_part(filename):
+    score = None
+    try:
+        score = midi.translate.midiFilePathToStream(filename, quarterLengthDivisors=(32,))
+    except midi.MidiException:
+        return 0
+    
+    partitions = instrument.partitionByInstrument(score)
+    if partitions is None:
+        return 0
+
+    has_piano = False
+    for p in partitions:
+        # print(type(p.getInstrument()))
+        if isinstance(p.getInstrument(), instrument.Piano):
+            has_piano = True
+    return 1 if has_piano else 0
 
 # Returns <filename> as a list of (pitch, relative offset, duration) tuples
 # Note: Consider transposing based on key signature?
@@ -77,10 +94,12 @@ def read_file_as_pitch_offset_duration(filename):
     print("processing ", filename, "...")
     for i in range(len(events)):  # flat converts relative offsets into absolute offsets!
         elt = events[i]
-        # TODO: add handling for Chords (not super common in the input files)
-        # if isinstance(elt, chord.Chord):
-        #     print(elt)
-        if isinstance(elt, note.Rest) or isinstance(elt, note.Note):  # for now, ignoring chord.Chord, meter.TimeSignature, tempo.MetronomeMark
+        if isinstance(elt, chord.Chord):
+            offset = elt.offset
+            duration = elt.quarterLength
+            for n in elt:
+                processed.append((n.pitch.midi, offset, duration))
+        if isinstance(elt, note.Rest) or isinstance(elt, note.Note):  # for now, ignoring meter.TimeSignature, tempo.MetronomeMark
             pitch = 0 if isinstance(elt, note.Rest) else elt.pitch.midi
             offset = elt.offset
             duration = elt.quarterLength
@@ -92,6 +111,31 @@ def read_file_as_pitch_offset_duration(filename):
         processed[i] = (processed[i][0], curr_abs_offset - prev_abs_offset, processed[i][2])
         prev_abs_offset = curr_abs_offset
     return processed
+
+# Same as above, but just looks at the first part (the melody).
+def read_melody_as_pitch_offset_duration(filename):
+    print("processing ", filename, "...")
+    score = midi.translate.midiFilePathToStream(filename, quarterLengthDivisors=(32,))
+    if not len(score) == 2:  # requires 2 parts exactly to be valid
+        return False, None
+    events = score[0].flat
+    processed = []
+    for i in range(len(events)):  # flat converts relative offsets into absolute offsets!
+        elt = events[i]
+        if isinstance(elt, chord.Chord):
+            return False, None  # chords are invalid
+        if isinstance(elt, note.Rest) or isinstance(elt, note.Note):  # for now, ignoring meter.TimeSignature, tempo.MetronomeMark
+            pitch = 0 if isinstance(elt, note.Rest) else elt.pitch.midi
+            offset = elt.offset
+            duration = elt.quarterLength
+            processed.append((pitch, offset, duration))
+    processed.sort(key = lambda x: (x[1], x[0]))
+    prev_abs_offset = 0
+    for i in range(len(processed)):
+        curr_abs_offset = processed[i][1]
+        processed[i] = (processed[i][0], curr_abs_offset - prev_abs_offset, processed[i][2])
+        prev_abs_offset = curr_abs_offset
+    return True, processed
 
 # Takes in a filename, builds all of the dictionaries we want for encoding and decoding, and encodes the files. Later, possibly split into functions for reuse.
 def process(file_regexp):
