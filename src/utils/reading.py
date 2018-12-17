@@ -77,9 +77,12 @@ def read_file_as_pitch_offset_duration(filename):
     print("processing ", filename, "...")
     for i in range(len(events)):  # flat converts relative offsets into absolute offsets!
         elt = events[i]
-        # TODO: add handling for Chords (not super common in the input files)
-        # if isinstance(elt, chord.Chord):
-        #     print(elt)
+        if isinstance(elt, chord.Chord):
+            offset = elt.offset
+            duration = elt.quarterLength
+            for note_in_chord in elt:
+                pitch = note_in_chord.pitch.midi
+                processed.append((pitch, offset, duration))
         if isinstance(elt, note.Rest) or isinstance(elt, note.Note):  # for now, ignoring chord.Chord, meter.TimeSignature, tempo.MetronomeMark
             pitch = 0 if isinstance(elt, note.Rest) else elt.pitch.midi
             offset = elt.offset
@@ -114,7 +117,13 @@ def process(file_regexp):
     triples = np.array(concat_files(processed_files))
     pitches, offsets, durations = triples[:,0], triples[:,1], triples[:,2]
     (pitch_to_index, index_to_pitch), (offset_to_index, index_to_offset), (duration_to_index, index_to_duration) = build_dictionaries(pitches), build_dictionaries(offsets), build_dictionaries(durations)
-
+    #########
+    ###EMERGENCY CODE DELETE LATER
+    dictionaries = np.load('../data/piano_testandtrain_encode_dicts.npy')
+    pitch_to_index = dictionaries[0]
+    offset_to_index = dictionaries[1]
+    duration_to_index = dictionaries[2]
+    ##########
     # Encode the files
     encoded_files = np.empty(len(processed_files), dtype=object)
     print("encoded_files shape = ", encoded_files.shape)
@@ -125,7 +134,13 @@ def process(file_regexp):
         encoded_file[:,1] = np.array([offset_to_index[offset] for offset in file[:,1]])
         encoded_file[:,2] = np.array([duration_to_index[duration] for duration in file[:,2]])
         encoded_files[i] = encoded_file
-
+    #########
+    ###EMERGENCY CODE DELETE LATER
+    '''filename2 = 'piano_testandtrain_encode'
+    filepath2 = '../data/'
+    dictionaries = np.array((pitch_to_index,offset_to_index,duration_to_index),dtype=object)
+    np.save(filepath2+filename2+'_dicts.npy',dictionaries)'''
+    ##########
     return encoded_files, index_to_pitch, index_to_offset, index_to_duration
 
 # Takes in a rank-1 numpy array of values and returns 2 dictionaries - one mapping values to indices ("codes"), and one mapping indices back to values

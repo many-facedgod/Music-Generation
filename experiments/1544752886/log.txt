@@ -1,0 +1,10 @@
+RUN ID: 1544752886
+RUN DESCRIPTION: Nottingham_(pod)_13thDec
+--------------------------------------------------------
+Validating model...
+Mean validation score: 11.454333736442312
+--------------------------------------------------------
+Validating model...
+Mean validation score: 11.45425757357944
+--------------------------------------------------------
+Iteration 1/200:
